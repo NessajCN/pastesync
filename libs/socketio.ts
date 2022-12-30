@@ -1,42 +1,37 @@
 import { io, Socket } from "socket.io-client";
+import { Dispatch, SetStateAction } from "react";
 // import playRecord from "./playRecord";
 
-const socketIOInit = async () => {
+const socketIOInit = async (pc:RTCPeerConnection, setPc:Dispatch<SetStateAction<RTCPeerConnection>>) => {
   await fetch("/api/socketio/socket");
   const socketio = io();
-  let pc: RTCPeerConnection;
+  // let pc: RTCPeerConnection;
 
   socketio.on("connect", () => {
     console.log("connected");
   });
 
-  socketio.on("create", () => {
+  socketio.on("created", async () => {
     if (pc) {
       // if(pc && pc.connectionState === "connected") {
       pc.close();
     }
     // this.props.media.setState({user: 'host', bridge: 'create'});
-    socketio.emit("auth");
     console.log("created");
+    setPc(await peerConnect(socketio));
   });
-  socketio.on("bridge", async (pathid) => {
-    pc = await peerConnect(socketio);
-  });
-  socketio.on("join", () => {
+  socketio.on("joined", async () => {
     if (pc) {
       // if(pc && pc.connectionState === "connected") {
       pc.close();
     }
     // this.props.media.setState({user: 'guest', bridge: 'join'});
-    socketio.emit("auth");
     console.log("joined");
-  });
-  socketio.on("full", () => {
-    console.log("full");
+    setPc(await peerConnect(socketio));
   });
 
-  socketio.on("message", async (msg) => {
-    if (pc) {
+  socketio.on("message", async (msg: RTCSessionDescription) => {
+    if (pc.connectionState === "connected") {
       await onMessage(msg, pc, socketio);
     }
   });
@@ -103,32 +98,30 @@ const peerConnect = async (socket: Socket) => {
     console.log("connection state: ", pc.connectionState);
   };
 
-  pc.ontrack = (e) => {
-    console.log("ontrack", e);
-    const rstream = e.streams[0];
-  };
+  // pc.ontrack = (e) => {
+  //   console.log("ontrack", e);
+  //   const rstream = e.streams[0];
+  // };
 
-  const constraints = {
-    // video: true,
-    // audio: true,
-    audio: { echoCancellation: true },
-  };
-  const stream = await navigator.mediaDevices.getUserMedia(constraints);
+  // const constraints = {
+  //   // video: true,
+  //   // audio: true,
+  //   audio: { echoCancellation: true },
+  // };
+  // const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-  console.log("stream before:", pc);
-  for (const t of stream.getTracks()) {
-    console.log(t);
-    pc.addTrack(t);
-  }
+  // for (const t of stream.getTracks()) {
+  //   console.log(t);
+  //   pc.addTrack(t);
+  // }
 
   const dc = pc.createDataChannel("chat");
-  dc.binaryType = "arraybuffer";
+  // dc.binaryType = "arraybuffer";
   dc.onmessage = (msg) => {
-    // console.log("received message over data channel:" + msg.data);
+    console.log("received message over data channel:" + msg.data);
   };
   dc.onopen = () => {
     console.log("data channel created");
-    dc.send("getList");
   };
   dc.onclose = () => {
     console.log("The Data Channel is Closed");
