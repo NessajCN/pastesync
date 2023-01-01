@@ -1,11 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { Server } from "socket.io";
+import { SocketSDP } from "../../../types/sockettype";
+// type Data = {
+//   server: string;
+// };
 
-type Data = {
-  server: string;
-};
-
-export default async (req: NextApiRequest, res: NextApiResponse<Data>) => {
+export default async (req: NextApiRequest, res: NextApiResponse) => {
   if (res.socket && !res.socket.server.io) {
     const io = new Server(res.socket.server);
     res.socket.server.io = io;
@@ -19,30 +19,40 @@ export default async (req: NextApiRequest, res: NextApiResponse<Data>) => {
       });
 
       // sdp handler
-      let device = "";
+      let room: string = "";
       // sending to all clients in the room (channel) except sender
       socket.on("message", (message) => {
-        socket.broadcast.to(device).emit("message", message);
+        socket.to(room).emit("message", message);
       });
-
 
       socket.on("create", () => {
-        socket.join(socket.id);
+        room = socket.id;
+        socket.join(room);
         socket.emit("created", socket.id);
       });
-      socket.on("join", (room: string) => {
-        if ([...io.sockets.adapter.rooms.keys()].includes(room)) {
+      socket.on("join", (roomid: string) => {
+        if ([...io.sockets.adapter.rooms.keys()].includes(roomid)) {
+          room = roomid;
           socket.join(room);
-          socket.emit("joined", room);
+          // socket.emit("joined", roomid);
+          socket.to(room).emit("joined", socket.id);
         } else {
-          socket.emit("failed", room);
+          socket.emit("noroom", roomid);
         }
       });
 
-      socket.on("leave", (room: string | undefined) => {
+      socket.on("pcoffer",({socketid, sdp}: SocketSDP)=>{
+        io.to(socketid).emit("offer", {socketid: socket.id, sdp})
+      });
+
+      socket.on("pcanswer",({socketid, sdp}: SocketSDP)=>{
+        io.to(socketid).emit("answer", {socketid: socket.id, sdp})
+      });
+
+      socket.on("leave", () => {
         // sending to all clients in the room (channel) except sender
-        if (room) {
-          socket.broadcast.to(room).emit("hangup");
+        if (room !== "") {
+          socket.to(room).emit("hangup");
           socket.leave(room);
         }
       });

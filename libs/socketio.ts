@@ -1,8 +1,22 @@
 import { io, Socket } from "socket.io-client";
 import { Dispatch, SetStateAction } from "react";
-// import playRecord from "./playRecord";
+import { SocketSDP, SocketPC } from "../types/sockettype";
 
-const socketIOInit = async (pc:RTCPeerConnection, setPc:Dispatch<SetStateAction<RTCPeerConnection>>) => {
+// type SocketSDP = {
+//   socketid: string;
+//   sdp: RTCSessionDescriptionInit;
+// };
+
+// type SocketPC = {
+//   socketid: string;
+//   pc: RTCPeerConnection;
+// };
+
+const socketIOInit = async (
+  pcs: SocketPC[],
+  setPcs: Dispatch<SetStateAction<SocketPC[]>>,
+  setIsRoomError: Dispatch<SetStateAction<boolean>>
+) => {
   await fetch("/api/socketio/socket");
   const socketio = io();
   // let pc: RTCPeerConnection;
@@ -12,32 +26,76 @@ const socketIOInit = async (pc:RTCPeerConnection, setPc:Dispatch<SetStateAction<
   });
 
   socketio.on("created", async () => {
-    if (pc) {
+    if (pcs.length > 0) {
       // if(pc && pc.connectionState === "connected") {
-      pc.close();
+      pcs.forEach((socketpc) => {
+        socketpc.pc.close();
+      });
     }
     // this.props.media.setState({user: 'host', bridge: 'create'});
     console.log("created");
-    setPc(await peerConnect(socketio));
+    // const pc0 = await peerConnect(socketio);
+    // setPcs([pc0]);
   });
-  socketio.on("joined", async () => {
-    if (pc) {
-      // if(pc && pc.connectionState === "connected") {
-      pc.close();
-    }
-    // this.props.media.setState({user: 'guest', bridge: 'join'});
-    console.log("joined");
-    setPc(await peerConnect(socketio));
+  socketio.on("joined", async (socketid: string) => {
+    /**
+     * When a guest joins a room, the room host and all other guests
+     * get the "joined" event and create a new peerConnection. To make
+     * a peerConnection explicit we attach the socketID of the remote
+     * peer on socket.io server and define
+     * @type {SocketPC} - which contains
+     * @property {socketID} socketid - socketid of remote peer on socket.io server
+     * @property {RTCPeerConnection} pc
+     * It is now available to send offer:RTCSessionDescriptionInit to the remote peer.
+     */
+
+    console.log(`${socketid} has joined the room.`);
+    const pcnow = await peerConnect(socketio);
+    const offer = await pcnow.createOffer();
+
+    await pcnow.setLocalDescription(offer);
+    // socket.send(pc.localDescription);
+    socketio.emit("pcoffer", { socketid, sdp: offer });
+    const socketpc: SocketPC = { socketid, pc: pcnow };
+    pcs.push(socketpc);
+    setPcs(pcs);
   });
 
-  socketio.on("message", async (msg: RTCSessionDescription) => {
-    if (pc.connectionState === "connected") {
-      await onMessage(msg, pc, socketio);
+  socketio.on("offer", async ({ socketid, sdp }: SocketSDP) => {
+    /**
+     * Guests who joined a room will get peerConnection invitation from
+     * the room host and all other guests who joined before.
+     */
+    if (sdp.type === "offer") {
+      const pcnow = await peerConnect(socketio);
+      await pcnow.setRemoteDescription(sdp);
+      const answer = await pcnow.createAnswer();
+      await pcnow.setLocalDescription(answer);
+      socketio.emit("pcanswer", { socketid, sdp: answer });
+      const socketpc: SocketPC = { socketid, pc: pcnow };
+      pcs.push(socketpc);
+      setPcs(pcs);
     }
   });
+
+  socketio.on("answer", async ({ socketid, sdp }: SocketSDP) => {
+    if (sdp.type === "answer") {
+      pcs.forEach(async (socketpc) => {
+        if (socketpc.socketid === socketid) {
+          await socketpc.pc.setRemoteDescription(sdp);
+        }
+      });
+    }
+  });
+
   socketio.on("hangup", () => {
     console.log("hangup");
   });
+  socketio.on("noroom", () => {
+    setIsRoomError(true);
+    console.log("noroom");
+  });
+
   return socketio;
 };
 
@@ -76,7 +134,7 @@ const peerConnect = async (socket: Socket) => {
   const iceConf = {
     iceServers: [
       {
-        urls: "turn:222.92.212.254:3478",
+        urls: "turn:gitnessaj.com:3478",
         username: "tjaiturn",
         credential: "tjaiturn",
       },
@@ -126,11 +184,15 @@ const peerConnect = async (socket: Socket) => {
   dc.onclose = () => {
     console.log("The Data Channel is Closed");
   };
-
-  const offer = await pc.createOffer();
-
-  await pc.setLocalDescription(offer);
-  socket.send(pc.localDescription);
   return pc;
+  // const offer = await pc.createOffer();
+
+  // await pc.setLocalDescription(offer);
+  // // socket.send(pc.localDescription);
+  // socket.emit("pcoffer", {
+  //   socketid,
+  //   sdp: offer,
+  // });
+  // return {socketid, pc};
 };
 export default socketIOInit;

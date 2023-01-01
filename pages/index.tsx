@@ -5,13 +5,15 @@ import styles from "../styles/Home.module.css";
 
 import Homebutton from "../components/home/Homebutton";
 import { useState } from "react";
-
+import { SocketPC } from "../types/sockettype";
 // const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
+  const [inRoom, setInRoom] = useState<boolean>(false);
+  const [roomNo, setRoomNo] = useState<string>("");
+  const [pcs, setPcs] = useState<SocketPC[]>([]);
+  const [isRoomError, setIsRoomError] = useState<boolean>(false);
 
-  const [inRoom, setInRoom] = useState(false);
-  
   return (
     <>
       <Head>
@@ -21,8 +23,16 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className={styles.main} >
-        {!inRoom && <Homebutton />}
+      <main className={styles.main}>
+        {!inRoom && (
+          <Homebutton
+            setInRoom={setInRoom}
+            roomNo={roomNo}
+            setRoomNo={setRoomNo}
+            isRoomError={isRoomError}
+            setIsRoomError={setIsRoomError}
+          />
+        )}
       </main>
       {/* <main className={styles.main}>
         <div className={styles.description}>
