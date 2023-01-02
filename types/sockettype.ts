@@ -3,7 +3,12 @@ export interface SocketSDP {
   sdp: RTCSessionDescriptionInit;
 }
 
-export interface SocketPC {
+// export interface SocketPC {
+//   socketid: string;
+//   pc: RTCPeerConnection;
+// }
+
+export interface SocketIceCandidate {
   socketid: string;
-  pc: RTCPeerConnection;
+  candidate: RTCIceCandidate;
 }

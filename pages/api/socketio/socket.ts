@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { Server } from "socket.io";
-import { SocketSDP } from "../../../types/sockettype";
+import { SocketSDP, SocketIceCandidate } from "../../../types/sockettype";
+import { nanoid } from "nanoid";
 // type Data = {
 //   server: string;
 // };
@@ -11,11 +12,23 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     res.socket.server.io = io;
 
     io.on("connection", (socket) => {
+      socket.on("connect", () => {
+        console.log(`socket ${socket.id} has connected.`);
+      });
+
       socket.on("error", (err) => {
-        console.log(err);
+        console.log(`socket ${socket.id} error:${err}`);
       });
       socket.on("disconnect", (reason) => {
-        console.log(reason);
+        console.log(
+          `socket ${socket.id} has disconnected, \nreason: ${reason}`
+        );
+      });
+
+      socket.on("disconnecting", (reason) => {
+        socket.rooms.forEach((room: string) => {
+          socket.to(room).emit("hangup", socket.id);
+        });
       });
 
       // sdp handler
@@ -26,9 +39,9 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       });
 
       socket.on("create", () => {
-        room = socket.id;
+        room = nanoid(8);
         socket.join(room);
-        socket.emit("created", socket.id);
+        socket.emit("created", room);
       });
       socket.on("join", (roomid: string) => {
         if ([...io.sockets.adapter.rooms.keys()].includes(roomid)) {
@@ -41,19 +54,29 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
         }
       });
 
-      socket.on("pcoffer",({socketid, sdp}: SocketSDP)=>{
-        io.to(socketid).emit("offer", {socketid: socket.id, sdp})
+      socket.on("pcoffer", ({ socketid, sdp }: SocketSDP) => {
+        io.to(socketid).emit("offer", { socketid: socket.id, sdp });
       });
 
-      socket.on("pcanswer",({socketid, sdp}: SocketSDP)=>{
-        io.to(socketid).emit("answer", {socketid: socket.id, sdp})
+      socket.on("pcanswer", ({ socketid, sdp }: SocketSDP) => {
+        io.to(socketid).emit("answer", { socketid: socket.id, sdp });
       });
 
-      socket.on("leave", () => {
+      socket.on(
+        "pcicecandidate",
+        ({ socketid, candidate }: SocketIceCandidate) => {
+          io.to(socketid).emit("icecandidate", {
+            socketid: socket.id,
+            candidate,
+          });
+        }
+      );
+
+      socket.on("leave", (roomid: string) => {
         // sending to all clients in the room (channel) except sender
-        if (room !== "") {
-          socket.to(room).emit("hangup");
-          socket.leave(room);
+        if (socket.rooms.has(roomid)) {
+          socket.to(roomid).emit("hangup");
+          socket.leave(roomid);
         }
       });
     });

@@ -10,6 +10,8 @@ type HomebuttonProps = {
   setInRoom: Dispatch<SetStateAction<boolean>>;
   isRoomError: boolean;
   setIsRoomError: Dispatch<SetStateAction<boolean>>;
+  handleCreate: () => void;
+  handleJoin: () => void;
 };
 
 // interface HomebuttonProps {
@@ -22,13 +24,13 @@ const Homebutton = ({
   setRoomNo,
   isRoomError,
   setIsRoomError,
+  handleCreate,
+  handleJoin
 }: HomebuttonProps): JSX.Element => {
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setRoomNo(e.target.value);
   };
 
-  const handleCreate = () => {};
-  const handleJoin = () => {};
 
   return (
     <Box component="form" sx={{ width: 300 }}>

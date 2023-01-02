@@ -5,14 +5,23 @@ import styles from "../styles/Home.module.css";
 
 import Homebutton from "../components/home/Homebutton";
 import { useState } from "react";
-import { SocketPC } from "../types/sockettype";
+
+import socketIOInit from "../libs/socketio";
+
 // const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
   const [inRoom, setInRoom] = useState<boolean>(false);
   const [roomNo, setRoomNo] = useState<string>("");
-  const [pcs, setPcs] = useState<SocketPC[]>([]);
+  const [pcs, setPcs] = useState<Map<string, RTCPeerConnection>>(new Map());
   const [isRoomError, setIsRoomError] = useState<boolean>(false);
+
+  const handleCreate = async () => {
+    await socketIOInit(pcs, setPcs, setIsRoomError, setRoomNo);
+  };
+  const handleJoin = async () => {
+    await socketIOInit(pcs, setPcs, setIsRoomError, setRoomNo);
+  };
 
   return (
     <>
@@ -31,6 +40,8 @@ export default function Home() {
             setRoomNo={setRoomNo}
             isRoomError={isRoomError}
             setIsRoomError={setIsRoomError}
+            handleCreate={handleCreate}
+            handleJoin={handleJoin}
           />
         )}
       </main>

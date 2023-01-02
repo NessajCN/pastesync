@@ -1,6 +1,6 @@
 import { io, Socket } from "socket.io-client";
 import { Dispatch, SetStateAction } from "react";
-import { SocketSDP, SocketPC } from "../types/sockettype";
+import { SocketSDP, SocketIceCandidate } from "../types/sockettype";
 
 // type SocketSDP = {
 //   socketid: string;
@@ -13,9 +13,10 @@ import { SocketSDP, SocketPC } from "../types/sockettype";
 // };
 
 const socketIOInit = async (
-  pcs: SocketPC[],
-  setPcs: Dispatch<SetStateAction<SocketPC[]>>,
-  setIsRoomError: Dispatch<SetStateAction<boolean>>
+  pcs: Map<string, RTCPeerConnection>,
+  setPcs: Dispatch<SetStateAction<Map<string, RTCPeerConnection>>>,
+  setIsRoomError: Dispatch<SetStateAction<boolean>>,
+  setRoomNo: Dispatch<SetStateAction<string>>
 ) => {
   await fetch("/api/socketio/socket");
   const socketio = io();
@@ -25,11 +26,11 @@ const socketIOInit = async (
     console.log("connected");
   });
 
-  socketio.on("created", async () => {
-    if (pcs.length > 0) {
+  socketio.on("created", async (room: string) => {
+    if (pcs.size > 0) {
       // if(pc && pc.connectionState === "connected") {
-      pcs.forEach((socketpc) => {
-        socketpc.pc.close();
+      pcs.forEach((pc, _socketid) => {
+        pc.close();
       });
     }
     // this.props.media.setState({user: 'host', bridge: 'create'});
@@ -43,21 +44,36 @@ const socketIOInit = async (
      * get the "joined" event and create a new peerConnection. To make
      * a peerConnection explicit we attach the socketID of the remote
      * peer on socket.io server and define
-     * @type {SocketPC} - which contains
+     * @type {Map<string,RTCPeerConnection>} - who has a <key, value> pair as
      * @property {socketID} socketid - socketid of remote peer on socket.io server
-     * @property {RTCPeerConnection} pc
+     * @property {RTCPeerConnection} pc - RTCPeerConnection with provided socketID.
      * It is now available to send offer:RTCSessionDescriptionInit to the remote peer.
      */
 
     console.log(`${socketid} has joined the room.`);
-    const pcnow = await peerConnect(socketio);
+    const pcnow = await peerConnect();
+
+    pcnow.onicecandidate = (e: RTCPeerConnectionIceEvent) => {
+      socketio.emit("pcicecandidate", { socketid, candidate: e.candidate });
+    };
+
+    const dc = pcnow.createDataChannel("chat");
+    // dc.binaryType = "arraybuffer";
+    dc.onmessage = (msg) => {
+      console.log("received message over data channel:" + msg.data);
+    };
+    dc.onopen = () => {
+      console.log("data channel created");
+    };
+    dc.onclose = () => {
+      console.log("The Data Channel is Closed");
+    };
     const offer = await pcnow.createOffer();
 
     await pcnow.setLocalDescription(offer);
     // socket.send(pc.localDescription);
     socketio.emit("pcoffer", { socketid, sdp: offer });
-    const socketpc: SocketPC = { socketid, pc: pcnow };
-    pcs.push(socketpc);
+    pcs.set(socketid, pcnow);
     setPcs(pcs);
   });
 
@@ -67,29 +83,36 @@ const socketIOInit = async (
      * the room host and all other guests who joined before.
      */
     if (sdp.type === "offer") {
-      const pcnow = await peerConnect(socketio);
+      const pcnow = await peerConnect();
+
+      pcnow.onicecandidate = (e: RTCPeerConnectionIceEvent) => {
+        socketio.emit("pcicecandidate", { socketid, candidate: e.candidate });
+      };
       await pcnow.setRemoteDescription(sdp);
       const answer = await pcnow.createAnswer();
       await pcnow.setLocalDescription(answer);
       socketio.emit("pcanswer", { socketid, sdp: answer });
-      const socketpc: SocketPC = { socketid, pc: pcnow };
-      pcs.push(socketpc);
+      pcs.set(socketid, pcnow);
       setPcs(pcs);
     }
   });
 
   socketio.on("answer", async ({ socketid, sdp }: SocketSDP) => {
-    if (sdp.type === "answer") {
-      pcs.forEach(async (socketpc) => {
-        if (socketpc.socketid === socketid) {
-          await socketpc.pc.setRemoteDescription(sdp);
-        }
-      });
+    if (sdp.type === "answer" && pcs.has(socketid)) {
+      await pcs.get(socketid)?.setRemoteDescription(sdp);
     }
   });
 
-  socketio.on("hangup", () => {
-    console.log("hangup");
+  socketio.on(
+    "icecandidate",
+    async ({ socketid, candidate }: SocketIceCandidate) => {
+      pcs.get(socketid)?.addIceCandidate(candidate);
+    }
+  );
+
+  socketio.on("hangup", (socketid: string) => {
+    console.log(`socket ${socketid} has left.`);
+    pcs.delete(socketid);
   });
   socketio.on("noroom", () => {
     setIsRoomError(true);
@@ -99,38 +122,38 @@ const socketIOInit = async (
   return socketio;
 };
 
-const onMessage = async (
-  msg: RTCSessionDescription,
-  pc: RTCPeerConnection,
-  socket: Socket
-) => {
-  // if (!msg.type) {
-  //   msg = JSON.parse(msg);
-  // }
-  // console.log(msg)
-  if (msg.type === "offer") {
-    try {
-      // set remote description and answer
-      await pc.setRemoteDescription(new RTCSessionDescription(msg));
-      // console.log(pc.remoteDescription.sdp)
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      // console.log(pc.localDescription.sdp)
-      socket.send(pc.localDescription);
-    } catch (err) {
-      console.error(err);
-    }
-  } else if (msg.type === "answer") {
-    // set remote description
-    // console.log(msg.sdp);
-    await pc.setRemoteDescription(new RTCSessionDescription(msg));
-    // } else if (msg.type === "candidate") {
-    //   // add ice candidate
-    //   await pc.addIceCandidate(msg.candidate);
-  }
-};
+// const onMessage = async (
+//   msg: RTCSessionDescription,
+//   pc: RTCPeerConnection,
+//   socket: Socket
+// ) => {
+//   // if (!msg.type) {
+//   //   msg = JSON.parse(msg);
+//   // }
+//   // console.log(msg)
+//   if (msg.type === "offer") {
+//     try {
+//       // set remote description and answer
+//       await pc.setRemoteDescription(new RTCSessionDescription(msg));
+//       // console.log(pc.remoteDescription.sdp)
+//       const answer = await pc.createAnswer();
+//       await pc.setLocalDescription(answer);
+//       // console.log(pc.localDescription.sdp)
+//       socket.send(pc.localDescription);
+//     } catch (err) {
+//       console.error(err);
+//     }
+//   } else if (msg.type === "answer") {
+//     // set remote description
+//     // console.log(msg.sdp);
+//     await pc.setRemoteDescription(new RTCSessionDescription(msg));
+//     // } else if (msg.type === "candidate") {
+//     //   // add ice candidate
+//     //   await pc.addIceCandidate(msg.candidate);
+//   }
+// };
 
-const peerConnect = async (socket: Socket) => {
+const peerConnect = async () => {
   const iceConf = {
     iceServers: [
       {
@@ -143,17 +166,30 @@ const peerConnect = async (socket: Socket) => {
 
   const pc = new RTCPeerConnection(iceConf);
 
-  pc.onicecandidate = (e) => {
-    if (e.candidate) {
-      socket.send({
-        type: "candidate",
-        candidate: e.candidate,
-      });
-    }
-  };
+  // pc.onicecandidate = (e: RTCPeerConnectionIceEvent) => {
+  //   if (e.candidate) {
+  //     socket.send({
+  //       type: "candidate",
+  //       candidate: e.candidate,
+  //     });
+  //   }
+  // };
 
   pc.onconnectionstatechange = () => {
     console.log("connection state: ", pc.connectionState);
+  };
+
+  pc.ondatachannel = (e: RTCDataChannelEvent) => {
+    const dc = e.channel;
+    dc.onmessage = (msg) => {
+      console.log("received message over data channel:" + msg.data);
+    };
+    dc.onopen = () => {
+      console.log("data channel created");
+    };
+    dc.onclose = () => {
+      console.log("The Data Channel is Closed");
+    };
   };
 
   // pc.ontrack = (e) => {
@@ -173,17 +209,17 @@ const peerConnect = async (socket: Socket) => {
   //   pc.addTrack(t);
   // }
 
-  const dc = pc.createDataChannel("chat");
-  // dc.binaryType = "arraybuffer";
-  dc.onmessage = (msg) => {
-    console.log("received message over data channel:" + msg.data);
-  };
-  dc.onopen = () => {
-    console.log("data channel created");
-  };
-  dc.onclose = () => {
-    console.log("The Data Channel is Closed");
-  };
+  // const dc = pc.createDataChannel("chat");
+  // // dc.binaryType = "arraybuffer";
+  // dc.onmessage = (msg) => {
+  //   console.log("received message over data channel:" + msg.data);
+  // };
+  // dc.onopen = () => {
+  //   console.log("data channel created");
+  // };
+  // dc.onclose = () => {
+  //   console.log("The Data Channel is Closed");
+  // };
   return pc;
   // const offer = await pc.createOffer();
 
