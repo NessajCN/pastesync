@@ -5,13 +5,13 @@ import Stack from "@mui/material/Stack";
 import { ChangeEvent, useState, Dispatch, SetStateAction } from "react";
 
 type HomebuttonProps = {
-  roomNo: string;
-  setRoomNo: Dispatch<SetStateAction<string>>;
+  roomid: string;
+  setRoomid: Dispatch<SetStateAction<string>>;
   setInRoom: Dispatch<SetStateAction<boolean>>;
   isRoomError: boolean;
   setIsRoomError: Dispatch<SetStateAction<boolean>>;
-  handleCreate: () => void;
-  handleJoin: () => void;
+  handleCreate: () => Promise<void>;
+  handleJoin: () => Promise<void>;
 };
 
 // interface HomebuttonProps {
@@ -19,18 +19,18 @@ type HomebuttonProps = {
 // }
 
 const Homebutton = ({
-  roomNo,
+  roomid,
   setInRoom,
-  setRoomNo,
+  setRoomid,
   isRoomError,
   setIsRoomError,
   handleCreate,
-  handleJoin
+  handleJoin,
 }: HomebuttonProps): JSX.Element => {
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setRoomNo(e.target.value);
+    setIsRoomError(false);
+    setRoomid(e.target.value);
   };
-
 
   return (
     <Box component="form" sx={{ width: 300 }}>
@@ -41,12 +41,16 @@ const Homebutton = ({
         <Stack direction="row" spacing={2}>
           <TextField
             id="room"
-            label="Room No."
-            value={roomNo}
+            label="Room ID"
+            value={roomid}
             onChange={handleChange}
             sx={{ width: "50%" }}
             variant="outlined"
             error={isRoomError}
+            onKeyDown={async (e)=>{if (e.key === 'Enter') {
+              await handleJoin();
+            }}}
+            helperText={isRoomError && "Invalid room ID."}
           />
           <Button
             variant="contained"
@@ -59,7 +63,7 @@ const Homebutton = ({
         {/* <TextField
           id="room"
           label="Room No."
-          value={roomNo}
+          value={roomid}
           onChange={handleChange}
           // sx={{ border: 1 }}
           variant="outlined"

@@ -7,20 +7,56 @@ import Homebutton from "../components/home/Homebutton";
 import { useState } from "react";
 
 import socketIOInit from "../libs/socketio";
+import { Socket } from "socket.io-client";
+import Pastein from "../components/room/Pastein";
 
 // const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
   const [inRoom, setInRoom] = useState<boolean>(false);
-  const [roomNo, setRoomNo] = useState<string>("");
+  const [roomid, setRoomid] = useState<string>("");
+  const [pasteContent, setPasteContent] = useState<string>("");
+
   const [pcs, setPcs] = useState<Map<string, RTCPeerConnection>>(new Map());
+  const [dcs, setDcs] = useState<Map<string, RTCDataChannel>>(new Map());
+  // const [socket, setSocket] = useState<Socket | undefined>();
   const [isRoomError, setIsRoomError] = useState<boolean>(false);
 
+  // const pcs: Map<string, RTCPeerConnection> = new Map();
+  // const dcs: Map<string, RTCDataChannel> = new Map();
+  let socket: Socket;
+
   const handleCreate = async () => {
-    await socketIOInit(pcs, setPcs, setIsRoomError, setRoomNo);
+    setInRoom(true);
+    socket = await socketIOInit(
+      setPasteContent,
+      pcs,
+      setPcs,
+      dcs,
+      setDcs,
+      setIsRoomError,
+      setRoomid,
+      setInRoom
+    );
+    socket.emit("create");
   };
   const handleJoin = async () => {
-    await socketIOInit(pcs, setPcs, setIsRoomError, setRoomNo);
+    if (roomid === "") {
+      setIsRoomError(true);
+    } else {
+      setInRoom(true);
+      socket = await socketIOInit(
+        setPasteContent,
+        pcs,
+        setPcs,
+        dcs,
+        setDcs,
+        setIsRoomError,
+        setRoomid,
+        setInRoom
+      );
+      socket.emit("join", roomid);
+    }
   };
 
   return (
@@ -36,12 +72,21 @@ export default function Home() {
         {!inRoom && (
           <Homebutton
             setInRoom={setInRoom}
-            roomNo={roomNo}
-            setRoomNo={setRoomNo}
+            roomid={roomid}
+            setRoomid={setRoomid}
             isRoomError={isRoomError}
             setIsRoomError={setIsRoomError}
             handleCreate={handleCreate}
             handleJoin={handleJoin}
+          />
+        )}
+        {/* {inRoom && <div className={styles.description}>{roomid}</div>} */}
+        {inRoom && (
+          <Pastein
+            roomid={roomid}
+            dcs={dcs}
+            pasteContent={pasteContent}
+            setPasteContent={setPasteContent}
           />
         )}
       </main>

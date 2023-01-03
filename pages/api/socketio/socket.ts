@@ -1,14 +1,18 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { Server } from "socket.io";
+import type { Server as HTTPServer } from "node:http";
+import type { Socket as NetSocket } from "node:net";
+
+import { Server as IOServer } from "socket.io";
 import { SocketSDP, SocketIceCandidate } from "../../../types/sockettype";
 import { nanoid } from "nanoid";
-// type Data = {
-//   server: string;
-// };
 
-export default async (req: NextApiRequest, res: NextApiResponse) => {
+interface NextApiResponseWithSocket extends NextApiResponse {
+  socket: NetSocket & { server: HTTPServer & { io?: IOServer | undefined } };
+}
+
+export default async (req: NextApiRequest, res: NextApiResponseWithSocket) => {
   if (res.socket && !res.socket.server.io) {
-    const io = new Server(res.socket.server);
+    const io = new IOServer(res.socket.server);
     res.socket.server.io = io;
 
     io.on("connection", (socket) => {
@@ -41,13 +45,14 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       socket.on("create", () => {
         room = nanoid(8);
         socket.join(room);
-        socket.emit("created", room);
+        console.log(`created: ${room}`)
+        socket.emit("roomin", room);
       });
       socket.on("join", (roomid: string) => {
         if ([...io.sockets.adapter.rooms.keys()].includes(roomid)) {
           room = roomid;
           socket.join(room);
-          // socket.emit("joined", roomid);
+          socket.emit("roomin", roomid);
           socket.to(room).emit("joined", socket.id);
         } else {
           socket.emit("noroom", roomid);

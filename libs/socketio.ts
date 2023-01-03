@@ -1,7 +1,6 @@
 import { io, Socket } from "socket.io-client";
 import { Dispatch, SetStateAction } from "react";
 import { SocketSDP, SocketIceCandidate } from "../types/sockettype";
-
 // type SocketSDP = {
 //   socketid: string;
 //   sdp: RTCSessionDescriptionInit;
@@ -13,10 +12,15 @@ import { SocketSDP, SocketIceCandidate } from "../types/sockettype";
 // };
 
 const socketIOInit = async (
+  setPasteContent: Dispatch<SetStateAction<string>>,
+  // setSocket: Dispatch<SetStateAction<Socket | undefined>>,
   pcs: Map<string, RTCPeerConnection>,
   setPcs: Dispatch<SetStateAction<Map<string, RTCPeerConnection>>>,
+  dcs: Map<string, RTCDataChannel>,
+  setDcs: Dispatch<SetStateAction<Map<string, RTCDataChannel>>>,
   setIsRoomError: Dispatch<SetStateAction<boolean>>,
-  setRoomNo: Dispatch<SetStateAction<string>>
+  setRoomid: Dispatch<SetStateAction<string>>,
+  setInRoom: Dispatch<SetStateAction<boolean>>
 ) => {
   await fetch("/api/socketio/socket");
   const socketio = io();
@@ -26,18 +30,26 @@ const socketIOInit = async (
     console.log("connected");
   });
 
-  socketio.on("created", async (room: string) => {
+  socketio.on("roomin", (roomid: string) => {
     if (pcs.size > 0) {
       // if(pc && pc.connectionState === "connected") {
       pcs.forEach((pc, _socketid) => {
         pc.close();
       });
     }
+    pcs.clear();
+    dcs.clear();
+    setPcs(pcs);
+    setDcs(dcs);
+    setRoomid(roomid);
+    setInRoom(true);
+
     // this.props.media.setState({user: 'host', bridge: 'create'});
-    console.log("created");
+    console.log(`Successfully entering room ${roomid}`);
     // const pc0 = await peerConnect(socketio);
     // setPcs([pc0]);
   });
+
   socketio.on("joined", async (socketid: string) => {
     /**
      * When a guest joins a room, the room host and all other guests
@@ -53,27 +65,31 @@ const socketIOInit = async (
     console.log(`${socketid} has joined the room.`);
     const pcnow = await peerConnect();
 
-    pcnow.onicecandidate = (e: RTCPeerConnectionIceEvent) => {
-      socketio.emit("pcicecandidate", { socketid, candidate: e.candidate });
+    pcnow.onicecandidate = ({ candidate }: RTCPeerConnectionIceEvent) => {
+      socketio.emit("pcicecandidate", { socketid, candidate });
     };
 
     const dc = pcnow.createDataChannel("chat");
     // dc.binaryType = "arraybuffer";
     dc.onmessage = (msg) => {
-      console.log("received message over data channel:" + msg.data);
+      // console.log("received message over data channel:" + msg.data);
+      setPasteContent(msg.data === "n/a" ? "" : msg.data);
     };
     dc.onopen = () => {
-      console.log("data channel created");
+      console.log(`data channel created:${dcs.get(socketid)?.id}`);
     };
     dc.onclose = () => {
       console.log("The Data Channel is Closed");
     };
+    dcs.set(socketid, dc);
+    setDcs(dcs);
     const offer = await pcnow.createOffer();
 
     await pcnow.setLocalDescription(offer);
     // socket.send(pc.localDescription);
     socketio.emit("pcoffer", { socketid, sdp: offer });
     pcs.set(socketid, pcnow);
+
     setPcs(pcs);
   });
 
@@ -85,6 +101,21 @@ const socketIOInit = async (
     if (sdp.type === "offer") {
       const pcnow = await peerConnect();
 
+      pcnow.ondatachannel = (e: RTCDataChannelEvent) => {
+        const dc = e.channel;
+        dc.onmessage = (msg) => {
+          // console.log("received message over data channel:" + msg.data);
+          setPasteContent(msg.data === "n/a" ? "" : msg.data);
+        };
+        dc.onopen = () => {
+          console.log(`data channel created:${dcs.get(socketid)?.id}`);
+        };
+        dc.onclose = () => {
+          console.log("The Data Channel is Closed");
+        };
+        dcs.set(socketid, dc);
+        setDcs(dcs);
+      };
       pcnow.onicecandidate = (e: RTCPeerConnectionIceEvent) => {
         socketio.emit("pcicecandidate", { socketid, candidate: e.candidate });
       };
@@ -106,19 +137,24 @@ const socketIOInit = async (
   socketio.on(
     "icecandidate",
     async ({ socketid, candidate }: SocketIceCandidate) => {
-      pcs.get(socketid)?.addIceCandidate(candidate);
+      await pcs.get(socketid)?.addIceCandidate(candidate);
     }
   );
 
   socketio.on("hangup", (socketid: string) => {
     console.log(`socket ${socketid} has left.`);
+    pcs.get(socketid)?.close();
     pcs.delete(socketid);
+    setPcs(pcs);
+    dcs.delete(socketid);
+    setDcs(dcs);
   });
   socketio.on("noroom", () => {
     setIsRoomError(true);
+    setInRoom(false);
     console.log("noroom");
   });
-
+  // setSocket(socketio);
   return socketio;
 };
 
@@ -177,19 +213,6 @@ const peerConnect = async () => {
 
   pc.onconnectionstatechange = () => {
     console.log("connection state: ", pc.connectionState);
-  };
-
-  pc.ondatachannel = (e: RTCDataChannelEvent) => {
-    const dc = e.channel;
-    dc.onmessage = (msg) => {
-      console.log("received message over data channel:" + msg.data);
-    };
-    dc.onopen = () => {
-      console.log("data channel created");
-    };
-    dc.onclose = () => {
-      console.log("The Data Channel is Closed");
-    };
   };
 
   // pc.ontrack = (e) => {
