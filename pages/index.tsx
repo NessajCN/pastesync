@@ -19,16 +19,16 @@ export default function Home() {
 
   const [pcs, setPcs] = useState<Map<string, RTCPeerConnection>>(new Map());
   const [dcs, setDcs] = useState<Map<string, RTCDataChannel>>(new Map());
-  // const [socket, setSocket] = useState<Socket | undefined>();
+  const [socket, setSocket] = useState<Socket | undefined>();
   const [isRoomError, setIsRoomError] = useState<boolean>(false);
 
   // const pcs: Map<string, RTCPeerConnection> = new Map();
   // const dcs: Map<string, RTCDataChannel> = new Map();
-  let socket: Socket;
+  // let socket: Socket;
 
   const handleCreate = async () => {
     setInRoom(true);
-    socket = await socketIOInit(
+    const socketio = await socketIOInit(
       setPasteContent,
       pcs,
       setPcs,
@@ -38,14 +38,15 @@ export default function Home() {
       setRoomid,
       setInRoom
     );
-    socket.emit("create");
+    socketio.emit("create");
+    setSocket(socketio);
   };
   const handleJoin = async () => {
     if (roomid === "") {
       setIsRoomError(true);
     } else {
       setInRoom(true);
-      socket = await socketIOInit(
+      const socketio = await socketIOInit(
         setPasteContent,
         pcs,
         setPcs,
@@ -55,8 +56,30 @@ export default function Home() {
         setRoomid,
         setInRoom
       );
-      socket.emit("join", roomid);
+      socketio.emit("join", roomid);
+      setSocket(socketio);
     }
+  };
+
+  const handleLeave = () => {
+    // console.log(`socket:${socket?.id}`);
+    // console.log(`pcs:${[...pcs.keys()]}`);
+    // console.log(`dcs:${pcs}`);
+    socket?.emit("leave", roomid);
+    setRoomid("");
+    socket?.disconnect();
+    dcs.forEach((dc: RTCDataChannel) => {
+      dc.close();
+    });
+    pcs.forEach((pc: RTCPeerConnection) => {
+      pc.close();
+    });
+    pcs.clear();
+    dcs.clear();
+    setPcs(pcs);
+    setDcs(dcs);
+    setPasteContent("");
+    setInRoom(false);
   };
 
   return (
@@ -69,9 +92,10 @@ export default function Home() {
       </Head>
 
       <main className={styles.main}>
+        <h1>Pastesync</h1>
         {!inRoom && (
           <Homebutton
-            setInRoom={setInRoom}
+            // setInRoom={setInRoom}
             roomid={roomid}
             setRoomid={setRoomid}
             isRoomError={isRoomError}
@@ -87,6 +111,7 @@ export default function Home() {
             dcs={dcs}
             pasteContent={pasteContent}
             setPasteContent={setPasteContent}
+            handleLeave={handleLeave}
           />
         )}
       </main>

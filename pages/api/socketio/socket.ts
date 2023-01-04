@@ -45,7 +45,7 @@ export default async (req: NextApiRequest, res: NextApiResponseWithSocket) => {
       socket.on("create", () => {
         room = nanoid(8);
         socket.join(room);
-        console.log(`created: ${room}`)
+        console.log(`created: ${room}`);
         socket.emit("roomin", room);
       });
       socket.on("join", (roomid: string) => {
@@ -76,11 +76,16 @@ export default async (req: NextApiRequest, res: NextApiResponseWithSocket) => {
           });
         }
       );
+        
+      socket.on("iceconnectionfailed", (socketid: string) => {
+        // emit "icefailed" event to signal a dial back.
+        io.to(socketid).emit("icefailed", socket.id);
+      });
 
       socket.on("leave", (roomid: string) => {
         // sending to all clients in the room (channel) except sender
         if (socket.rooms.has(roomid)) {
-          socket.to(roomid).emit("hangup");
+          socket.to(roomid).emit("hangup", socket.id);
           socket.leave(roomid);
         }
       });
