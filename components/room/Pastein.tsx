@@ -5,13 +5,14 @@ import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 
 import Container from "@mui/material/Container";
-// import styles from "../../styles/Home.module.css";
-import { useState, ChangeEvent, Dispatch, SetStateAction } from "react";
+import styles from "../../styles/Home.module.css";
+import { useState, ChangeEvent, Dispatch, SetStateAction, useEffect } from "react";
 import { Socket } from "socket.io-client";
 
 type PasteinProps = {
   roomid: string;
   dcs: Map<string, RTCDataChannel>;
+  socket: Socket | undefined;
   pasteContent: string;
   setPasteContent: Dispatch<SetStateAction<string>>;
   handleLeave: () => void;
@@ -20,11 +21,13 @@ type PasteinProps = {
 const Pastein = ({
   roomid,
   dcs,
+  socket,
   pasteContent,
   setPasteContent,
   handleLeave,
 }: PasteinProps): JSX.Element => {
-  //   const [pasteContent, setPasteContent] = useState<string>("");
+    const [localpeer, setLocalpeer] = useState<string>("");
+    const [remotepeers, setRemotepeers] = useState<string[]>([]);
 
   const handlePaste = (e: ChangeEvent<HTMLInputElement>) => {
     setPasteContent(e.target.value);
@@ -36,6 +39,12 @@ const Pastein = ({
       }
     });
   };
+
+  useEffect(()=>{
+    setLocalpeer(socket?socket.id:"");
+    setRemotepeers([...dcs.keys()]);
+  });
+
   return (
     <Container maxWidth="sm">
       <Stack direction="row" spacing={2}>
@@ -71,6 +80,20 @@ const Pastein = ({
           variant="filled"
           helperText="Paste your text here."
         />
+        <p className={styles.description}>
+          Local peer: <br />
+          {localpeer}
+        </p>
+        <p className={styles.description}>
+          Remote peers:
+          <br />
+          {remotepeers.map((item) => (
+            <span key={item}>
+              {item}
+              <br />
+            </span>
+          ))}
+        </p>
       </Box>
     </Container>
   );

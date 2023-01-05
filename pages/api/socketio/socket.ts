@@ -45,7 +45,7 @@ export default async (req: NextApiRequest, res: NextApiResponseWithSocket) => {
       socket.on("create", () => {
         room = nanoid(8);
         socket.join(room);
-        console.log(`created: ${room}`);
+        console.log(`created room: ${room}`);
         socket.emit("roomin", room);
       });
       socket.on("join", (roomid: string) => {

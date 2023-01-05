@@ -109,6 +109,7 @@ export default function Home() {
           <Pastein
             roomid={roomid}
             dcs={dcs}
+            socket={socket}
             pasteContent={pasteContent}
             setPasteContent={setPasteContent}
             handleLeave={handleLeave}
