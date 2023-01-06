@@ -283,6 +283,7 @@ const socketIOInit = async (
   socketio.on("noroom", () => {
     setIsRoomError(true);
     setInRoom(false);
+    setRoomid("");
     console.log("noroom");
   });
   // setSocket(socketio);

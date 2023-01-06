@@ -3,10 +3,16 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 
 import Stack from "@mui/material/Stack";
-
+import CircularProgress from "@mui/material/CircularProgress";
 import Container from "@mui/material/Container";
 import styles from "../../styles/Home.module.css";
-import { useState, ChangeEvent, Dispatch, SetStateAction, useEffect } from "react";
+import {
+  useState,
+  ChangeEvent,
+  Dispatch,
+  SetStateAction,
+  useEffect,
+} from "react";
 import { Socket } from "socket.io-client";
 
 type PasteinProps = {
@@ -26,8 +32,8 @@ const Pastein = ({
   setPasteContent,
   handleLeave,
 }: PasteinProps): JSX.Element => {
-    const [localpeer, setLocalpeer] = useState<string>("");
-    const [remotepeers, setRemotepeers] = useState<string[]>([]);
+  const [localpeer, setLocalpeer] = useState<string>("");
+  const [remotepeers, setRemotepeers] = useState<string[]>([]);
 
   const handlePaste = (e: ChangeEvent<HTMLInputElement>) => {
     setPasteContent(e.target.value);
@@ -40,8 +46,8 @@ const Pastein = ({
     });
   };
 
-  useEffect(()=>{
-    setLocalpeer(socket?socket.id:"");
+  useEffect(() => {
+    setLocalpeer(socket ? socket.id : "");
     setRemotepeers([...dcs.keys()]);
   });
 
@@ -85,7 +91,7 @@ const Pastein = ({
           {localpeer}
         </p>
         <p className={styles.description}>
-          Remote peers:
+          {remotepeers.length > 0 ? `Remote peers:` : <CircularProgress />}
           <br />
           {remotepeers.map((item) => (
             <span key={item}>

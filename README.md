@@ -12,7 +12,7 @@
 
 - Paste your text in the text pasting area to sync your contents.
 
-#### Deploy your own pastesync
+#### Deploy your own pastesync:
 **This project is still in active development. Feel free to fork the project and deploy your own pastesync site.**
 
 ```bash
