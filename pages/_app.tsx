@@ -11,17 +11,15 @@ const darkTheme = createTheme({
 });
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <>
+    <ThemeProvider theme={darkTheme}>
       <Head>
         <title>Pastesync</title>
         <meta name="description" content="Paste texts among devices" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
-      </Head>{" "}
-      <ThemeProvider theme={darkTheme}>
-        <CssBaseline />
-        <Component {...pageProps} />
-      </ThemeProvider>
-    </>
+      </Head>
+      <CssBaseline />
+      <Component {...pageProps} />
+    </ThemeProvider>
   );
 }
