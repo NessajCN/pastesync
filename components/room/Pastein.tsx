@@ -2,6 +2,8 @@ import Image from "next/image";
 import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Tooltip from "@mui/material/Tooltip";
+import InputAdornment from "@mui/material/InputAdornment";
 import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
 import Stack from "@mui/material/Stack";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -63,7 +65,7 @@ const Pastein = ({
         });
       }
     } catch (error) {
-      console.error(error);
+      console.log(error);
     }
   };
 
@@ -81,10 +83,21 @@ const Pastein = ({
   useEffect(() => {
     setLocalpeer(socket ? socket.id : "");
     setRemotepeers([...dcs.keys()]);
+    // const permissionName = "clipboard-read" as PermissionName;
+
+    // navigator.permissions
+    //   .query({
+    //     name: permissionName,
+    //   })
+    //   .then((permissionState) => {
+    //     permissionState.state;
+    //   })
+    //   .catch((err) => {console.log(err.message)});
   });
 
   return (
-    <Container maxWidth="sm" sx={{ textAlign: "center" }}>
+    // <Container maxWidth="sm" sx={{ textAlign: "center" }}>
+    <Container maxWidth="sm">
       <Stack direction="row" spacing={2}>
         <Button
           variant="outlined"
@@ -106,39 +119,55 @@ const Pastein = ({
           Leave the room
         </Button>
       </Stack>
-      <Box
+      {/* <Box
         sx={{
           width: "100%",
           height: 80,
           position: "relative",
           mt: 3,
         }}
-      >
-        {/* To be fixed: Image link needed and image size should be loaded. */}
-        {imageSrc ? (
-          <Image src={imageSrc} alt="pastedImage" fill />
-        ) : (
-          <IconButton
-            sx={{
-              width: 80,
-              height: 80,
-              border: "2px dashed grey",
-              borderRadius: 3,
-            }}
-            aria-label="pasteimage"
-            size="large"
-            onClick={handleImage}
-          >
-            <AddPhotoAlternateOutlinedIcon fontSize="inherit" />
-          </IconButton>
-        )}
-      </Box>
+      > */}
+      {/* To be fixed: Image link needed and image size should be loaded. */}
+      {/* {imageSrc && <Image src={imageSrc} alt="pastedImage" fill />}
+      </Box> */}
 
-      <Box mt={3} sx={{ width: "100%", textAlign: "left" }}>
+      {/* <Box mt={3} sx={{ width: "100%", textAlign: "left" }}> */}
+      <Box mt={3} sx={{ width: "100%" }}>
         <TextField
           id="pastefield"
           label={`Room ID: ${roomid}`}
           value={pasteContent}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <Tooltip title="Paste Image">
+                  <IconButton
+                    // color="primary"
+                    aria-label="pasteimage"
+                    component="label"
+                    sx={{
+                      borderRadius: 2,
+                      // border: "1px dashed grey"
+                    }}
+                  >
+                    <input hidden accept="image/*" type="file" />
+                    <AddPhotoAlternateOutlinedIcon />
+                  </IconButton>
+                  {/* <IconButton
+                    aria-label="pasteimage"
+                    sx={{
+                      borderRadius: 2,
+                      // border: "1px dashed grey"
+                    }}
+                    onClick={handleImage}
+                  >
+                    
+                    <AddPhotoAlternateOutlinedIcon />
+                  </IconButton> */}
+                </Tooltip>
+              </InputAdornment>
+            ),
+          }}
           onChange={handlePaste}
           multiline
           sx={{ width: "100%" }}
@@ -153,9 +182,9 @@ const Pastein = ({
           {remotepeers.length > 0 ? (
             `Remote peers:`
           ) : (
-            <div style={{ textAlign: "center" }}>
+            <a style={{ textAlign: "center" }}>
               <CircularProgress />
-            </div>
+            </a>
           )}
           <br />
           {remotepeers.map((item) => (
