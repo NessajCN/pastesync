@@ -68,12 +68,12 @@ export async function POST(req: Request) {
   const respxml = `<xml>
   <ToUserName><![CDATA[${xml.FromUserName}]]></ToUserName>
   <FromUserName><![CDATA[${xml.ToUserName}]]></FromUserName>
-  <CreateTime>${Math.floor(Date.now()/1000)}</CreateTime>
+  <CreateTime>${Math.floor(Date.now() / 1000)}</CreateTime>
   <MsgType><![CDATA[text]]></MsgType>
   <Content><![CDATA[你好]]></Content>
 </xml>
 `
-
-  return new NextResponse("success");
+  return new NextResponse(respxml);
+  // return new NextResponse("success");
 
 }
