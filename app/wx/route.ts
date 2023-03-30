@@ -40,7 +40,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const { searchParams } = new URL(req.url);
   const rawbody = await req.text();
-  const xml = await parseStringPromise(rawbody);
+  const { xml } = await parseStringPromise(rawbody);
 
   console.log(`Request from: ${req.url};\nmethod: ${req.method};\nbody: ${rawbody};\n`);
   const signature = searchParams.get("signature");
