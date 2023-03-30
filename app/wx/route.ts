@@ -24,7 +24,7 @@ export async function GET(request: Request) {
   console.log(`hashcode: ${hashcode}`);
   if(hashcode === signature) {
     console.log(`echostr: ${echostr}`);
-    return echostr;
+    return new NextResponse(echostr);
   }
 
   // const res = await fetch(`https://data.mongodb-api.com/product/${id}`, {
