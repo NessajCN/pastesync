@@ -38,7 +38,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const { searchParams } = new URL(req.url);
-  console.log(`Request from: ${req.url}.\nParams: ${searchParams}`);
+  console.log(`Request from: ${req.url};\nmethod: ${req.method};\nbody: ${req.body}`);
   const signature = searchParams.get("signature");
   const timestamp = searchParams.get("timestamp");
   const nonce = searchParams.get("nonce");
@@ -60,6 +60,6 @@ export async function POST(req: Request) {
   }
 
   const rawbody = req.body;
-  return new NextResponse(rawbody);
+  return new NextResponse("");
 
 }
