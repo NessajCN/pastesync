@@ -21,7 +21,9 @@ export async function GET(request: Request) {
   const shasum = createHash('sha1');
   arr.forEach(item => shasum.update(item));
   const hashcode = shasum.digest('hex');
+  console.log(`hashcode: ${hashcode}`);
   if(hashcode === signature) {
+    console.log(`echostr: ${echostr}`);
     return echostr;
   }
 
