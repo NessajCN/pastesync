@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   }
   const arr = [timestamp, nonce, echostr].sort();
   const shasum = createHash('sha1');
-  arr.forEach(shasum.update);
+  arr.forEach(item => shasum.update(item));
   const hashcode = shasum.digest('hex');
   if(hashcode === signature) {
     return echostr;
