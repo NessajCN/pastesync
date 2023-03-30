@@ -38,7 +38,8 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const { searchParams } = new URL(req.url);
-  console.log(`Request from: ${req.url};\nmethod: ${req.method};\nbody: ${req.body}`);
+  const rawbody = await req.text();
+  console.log(`Request from: ${req.url};\nmethod: ${req.method};\nbody: ${rawbody}`);
   const signature = searchParams.get("signature");
   const timestamp = searchParams.get("timestamp");
   const nonce = searchParams.get("nonce");
@@ -62,7 +63,6 @@ export async function POST(req: Request) {
   const encrypt_type = searchParams.get("encrypt_type");
   const msg_signature = searchParams.get("msg_signature");
 
-  const rawbody = req.body;
   return new NextResponse("");
 
 }
