@@ -16,11 +16,11 @@ export async function GET(request: Request) {
   if (!signature || !timestamp || !nonce || !echostr) {
     return NextResponse.json({ success: false, message: "Invalid Request" }, { status: 400 });
   }
-  const arr = [timestamp, nonce, echostr].sort();
+  const token = process.env.TOKEN || "";
+  const arr = [timestamp, nonce, token].sort();
   const shasum = createHash('sha1');
   arr.forEach(item => shasum.update(item));
   const hashcode = shasum.digest('hex');
-  console.log(hashcode);
   if(hashcode === signature) {
     return echostr;
   }
