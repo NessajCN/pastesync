@@ -164,7 +164,7 @@ const socketIOInit = async (
     setPcs(pcs);
   };
 
-  await fetch("/api/socketio/socket");
+  await fetch("/api/socketio");
   const socketio = io();
   // let pc: RTCPeerConnection;
 
