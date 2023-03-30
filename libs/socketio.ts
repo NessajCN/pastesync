@@ -26,7 +26,7 @@ const socketIOInit = async (
     const iceConf = {
       iceServers: [
         {
-          urls: "turn:gitnessaj.com:3478",
+          urls: "turn:tongjiai.cn:3478",
           username: "tjaiturn",
           credential: "tjaiturn",
         },
