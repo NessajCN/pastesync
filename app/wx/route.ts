@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createHash } from "crypto";
+import { parseStringPromise } from "xml2js";
 
 const checksig = (signature: string, timestamp: string, nonce: string) => {
   const token = process.env.TOKEN || "";
@@ -39,13 +40,15 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const { searchParams } = new URL(req.url);
   const rawbody = await req.text();
-  console.log(`Request from: ${req.url};\nmethod: ${req.method};\nbody: ${rawbody}`);
+  const xml = await parseStringPromise(rawbody);
+
+  console.log(`Request from: ${req.url};\nmethod: ${req.method};\nbody: ${xml}`);
   const signature = searchParams.get("signature");
   const timestamp = searchParams.get("timestamp");
   const nonce = searchParams.get("nonce");
   // const reqHeaders: HeadersInit = new Headers();
   // reqHeaders.set("Content-Type", "application/json");
-  if (!signature || !timestamp || !nonce ) {
+  if (!signature || !timestamp || !nonce) {
     return NextResponse.json(
       { success: false, message: "Invalid Request" },
       { status: 400 }
@@ -60,9 +63,17 @@ export async function POST(req: Request) {
   }
 
   const openid = searchParams.get("openid");
-  const encrypt_type = searchParams.get("encrypt_type");
-  const msg_signature = searchParams.get("msg_signature");
+  // const encrypt_type = searchParams.get("encrypt_type");
+  // const msg_signature = searchParams.get("msg_signature");
+  const respxml = `<xml>
+  <ToUserName><![CDATA[${xml.FromUserName}]]></ToUserName>
+  <FromUserName><![CDATA[${xml.ToUserName}]]></FromUserName>
+  <CreateTime>${Math.floor(Date.now()/1000)}</CreateTime>
+  <MsgType><![CDATA[text]]></MsgType>
+  <Content><![CDATA[你好]]></Content>
+</xml>
+`
 
-  return new NextResponse("");
+  return new NextResponse("success");
 
 }

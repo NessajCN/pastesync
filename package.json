@@ -34,6 +34,10 @@
     "react-markdown": "^8.0.4",
     "socket.io": "^4.6.1",
     "socket.io-client": "^4.6.1",
-    "typescript": "^5.0.2"
+    "typescript": "^5.0.2",
+    "xml2js": "^0.4.23"
+  },
+  "devDependencies": {
+    "@types/xml2js": "^0.4.11"
   }
 }
