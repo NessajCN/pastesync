@@ -42,7 +42,7 @@ export async function POST(req: Request) {
   const rawbody = await req.text();
   const xml = await parseStringPromise(rawbody);
 
-  console.log(`Request from: ${req.url};\nmethod: ${req.method};\nbody: ${xml}`);
+  console.log(`Request from: ${req.url};\nmethod: ${req.method};\nbody: ${rawbody};\n`);
   const signature = searchParams.get("signature");
   const timestamp = searchParams.get("timestamp");
   const nonce = searchParams.get("nonce");
@@ -66,13 +66,13 @@ export async function POST(req: Request) {
   // const encrypt_type = searchParams.get("encrypt_type");
   // const msg_signature = searchParams.get("msg_signature");
   const respxml = `<xml>
-  <ToUserName><![CDATA[${xml.FromUserName}]]></ToUserName>
-  <FromUserName><![CDATA[${xml.ToUserName}]]></FromUserName>
-  <CreateTime>${Math.floor(Date.now() / 1000)}</CreateTime>
-  <MsgType><![CDATA[text]]></MsgType>
-  <Content><![CDATA[你好]]></Content>
-</xml>
-`
+    <ToUserName><![CDATA[${xml.FromUserName[0]}]]></ToUserName>
+    <FromUserName><![CDATA[${xml.ToUserName[0]}]]></FromUserName>
+    <CreateTime>${Math.floor(Date.now() / 1000)}</CreateTime>
+    <MsgType><![CDATA[text]]></MsgType>
+    <Content><![CDATA[你好]]></Content>
+  </xml>`
+  console.log(respxml);
   return new NextResponse(respxml);
   // return new NextResponse("success");
 
