@@ -42,7 +42,9 @@ export async function POST(req: Request) {
   const rawbody = await req.text();
   const { xml } = await parseStringPromise(rawbody);
 
-  console.log(`Request from: ${req.url};\nmethod: ${req.method};\nbody: ${rawbody};\n`);
+  console.log(
+    `Request from: ${req.url};\nmethod: ${req.method};\nbody: ${rawbody};\n`
+  );
   const signature = searchParams.get("signature");
   const timestamp = searchParams.get("timestamp");
   const nonce = searchParams.get("nonce");
@@ -65,15 +67,17 @@ export async function POST(req: Request) {
   const openid = searchParams.get("openid");
   // const encrypt_type = searchParams.get("encrypt_type");
   // const msg_signature = searchParams.get("msg_signature");
+
+  const reply = `hello, ${openid}`;
   const respxml = `<xml>
-    <ToUserName><![CDATA[${xml.FromUserName[0]}]]></ToUserName>
-    <FromUserName><![CDATA[${xml.ToUserName[0]}]]></FromUserName>
-    <CreateTime>${Math.floor(Date.now() / 1000)}</CreateTime>
-    <MsgType><![CDATA[text]]></MsgType>
-    <Content><![CDATA[你好]]></Content>
-  </xml>`
+  <ToUserName><![CDATA[${xml.FromUserName[0]}]]></ToUserName>
+  <FromUserName><![CDATA[${xml.ToUserName[0]}]]></FromUserName>
+  <CreateTime>${Math.floor(Date.now() / 1000)}</CreateTime>
+  <MsgType><![CDATA[text]]></MsgType>
+  <Content><![CDATA[${reply}]]></Content>
+</xml>`;
+
   console.log(respxml);
   return new NextResponse(respxml);
   // return new NextResponse("success");
-
 }
