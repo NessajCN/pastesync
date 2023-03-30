@@ -42,10 +42,9 @@ export async function POST(req: Request) {
   const signature = searchParams.get("signature");
   const timestamp = searchParams.get("timestamp");
   const nonce = searchParams.get("nonce");
-  const echostr = searchParams.get("echostr");
   // const reqHeaders: HeadersInit = new Headers();
   // reqHeaders.set("Content-Type", "application/json");
-  if (!signature || !timestamp || !nonce || !echostr) {
+  if (!signature || !timestamp || !nonce ) {
     return NextResponse.json(
       { success: false, message: "Invalid Request" },
       { status: 400 }
@@ -58,6 +57,10 @@ export async function POST(req: Request) {
       { status: 401 }
     );
   }
+
+  const openid = searchParams.get("openid");
+  const encrypt_type = searchParams.get("encrypt_type");
+  const msg_signature = searchParams.get("msg_signature");
 
   const rawbody = req.body;
   return new NextResponse("");
