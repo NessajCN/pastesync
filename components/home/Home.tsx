@@ -1,10 +1,11 @@
+'use client'
 import Head from "next/head";
-import styles from "../../styles/Home.module.css";
+import styles from "@/styles/Home.module.css";
 
 import Homebutton from "./Homebutton";
 import { useEffect, useState } from "react";
 
-import socketIOInit from "../../libs/socketio";
+import socketIOInit from "@/libs/socketio";
 import { Socket } from "socket.io-client";
 import Pastein from "../room/Pastein";
 
