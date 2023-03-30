@@ -2,7 +2,7 @@ import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
-import ReactMarkdown from "react-markdown";
+// import ReactMarkdown from "react-markdown";
 import { ChangeEvent, useState, Dispatch, SetStateAction } from "react";
 
 type HomebuttonProps = {
@@ -70,7 +70,8 @@ const Homebutton = ({
           </Button>
         </Stack>
         <Box component="div">
-          <ReactMarkdown children={intro} />
+          {/* <ReactMarkdown children={intro} /> */}
+          {intro}
         </Box>
         {/* <TextField
           id="room"

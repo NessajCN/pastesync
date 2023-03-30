@@ -1,17 +1,24 @@
-'use client'
-import Head from "next/head";
-import styles from "@/styles/Home.module.css";
+"use client";
+import styles from "@/styles/page.module.css";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
 
 import Homebutton from "./Homebutton";
 import { useEffect, useState } from "react";
 
-import socketIOInit from "@/libs/socketio";
+// import socketIOInit from "@/libs/socketio";
 import { Socket } from "socket.io-client";
 import Pastein from "../room/Pastein";
 
 type HomeProps = {
   rid?: string;
 };
+
+const darkTheme = createTheme({
+  palette: {
+    mode: "dark",
+  },
+});
 
 export default function Home({ rid }: HomeProps) {
   const [inRoom, setInRoom] = useState<boolean>(false);
@@ -23,38 +30,39 @@ export default function Home({ rid }: HomeProps) {
   const [socket, setSocket] = useState<Socket | undefined>();
   const [isRoomError, setIsRoomError] = useState<boolean>(false);
 
+
   const handleCreate = async () => {
     setInRoom(true);
-    const socketio = await socketIOInit(
-      setPasteContent,
-      pcs,
-      setPcs,
-      dcs,
-      setDcs,
-      setIsRoomError,
-      setRoomid,
-      setInRoom
-    );
-    socketio.emit("create");
-    setSocket(socketio);
+    // const socketio = await socketIOInit(
+    //   setPasteContent,
+    //   pcs,
+    //   setPcs,
+    //   dcs,
+    //   setDcs,
+    //   setIsRoomError,
+    //   setRoomid,
+    //   setInRoom
+    // );
+    // socketio.emit("create");
+    // setSocket(socketio);
   };
   const handleJoin = async () => {
     if (roomid === "") {
       setIsRoomError(true);
     } else {
       setInRoom(true);
-      const socketio = await socketIOInit(
-        setPasteContent,
-        pcs,
-        setPcs,
-        dcs,
-        setDcs,
-        setIsRoomError,
-        setRoomid,
-        setInRoom
-      );
-      socketio.emit("join", roomid);
-      setSocket(socketio);
+      // const socketio = await socketIOInit(
+      //   setPasteContent,
+      //   pcs,
+      //   setPcs,
+      //   dcs,
+      //   setDcs,
+      //   setIsRoomError,
+      //   setRoomid,
+      //   setInRoom
+      // );
+      // socketio.emit("join", roomid);
+      // setSocket(socketio);
     }
   };
 
@@ -82,30 +90,33 @@ export default function Home({ rid }: HomeProps) {
   //   }
   // },[rid]);
   return (
-    <main className={styles.main}>
-      <h1>Pastesync</h1>
-      {!inRoom && (
-        <Homebutton
-          // setInRoom={setInRoom}
-          roomid={roomid}
-          setRoomid={setRoomid}
-          isRoomError={isRoomError}
-          setIsRoomError={setIsRoomError}
-          handleCreate={handleCreate}
-          handleJoin={handleJoin}
-        />
-      )}
-      {/* {inRoom && <div className={styles.description}>{roomid}</div>} */}
-      {inRoom && (
-        <Pastein
-          roomid={roomid}
-          dcs={dcs}
-          socket={socket}
-          pasteContent={pasteContent}
-          setPasteContent={setPasteContent}
-          handleLeave={handleLeave}
-        />
-      )}
-    </main>
+    <ThemeProvider theme={darkTheme}>
+      <CssBaseline />
+      <main className={styles.main}>
+        <h1>Pastesync</h1>
+        {!inRoom && (
+          <Homebutton
+            // setInRoom={setInRoom}
+            roomid={roomid}
+            setRoomid={setRoomid}
+            isRoomError={isRoomError}
+            setIsRoomError={setIsRoomError}
+            handleCreate={handleCreate}
+            handleJoin={handleJoin}
+          />
+        )}
+        {/* {inRoom && <div className={styles.description}>{roomid}</div>} */}
+        {inRoom && (
+          <Pastein
+            roomid={roomid}
+            dcs={dcs}
+            socket={socket}
+            pasteContent={pasteContent}
+            setPasteContent={setPasteContent}
+            handleLeave={handleLeave}
+          />
+        )}
+      </main>
+    </ThemeProvider>
   );
 }

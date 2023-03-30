@@ -1,6 +1,6 @@
 import { io, Socket } from "socket.io-client";
 import { Dispatch, SetStateAction } from "react";
-import { SocketSDP, SocketIceCandidate } from "../types/sockettype";
+import { SocketSDP, SocketIceCandidate } from "@/types/sockettype";
 // type SocketSDP = {
 //   socketid: string;
 //   sdp: RTCSessionDescriptionInit;

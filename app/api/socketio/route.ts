@@ -3,7 +3,7 @@ import type { Server as HTTPServer } from "node:http";
 import type { Socket as NetSocket } from "node:net";
 
 import { Server as IOServer } from "socket.io";
-import { SocketSDP, SocketIceCandidate } from "../../../types/sockettype";
+import { SocketSDP, SocketIceCandidate } from "@/types/sockettype";
 import { nanoid } from "nanoid";
 
 interface NextApiResponseWithSocket extends NextApiResponse {

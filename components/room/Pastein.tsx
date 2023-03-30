@@ -1,3 +1,5 @@
+'use client'
+
 import Image from "next/image";
 import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
@@ -8,7 +10,7 @@ import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternate
 import Stack from "@mui/material/Stack";
 import CircularProgress from "@mui/material/CircularProgress";
 import Container from "@mui/material/Container";
-import styles from "../../styles/Home.module.css";
+import styles from "@/styles/page.module.css";
 import {
   useState,
   ChangeEvent,
