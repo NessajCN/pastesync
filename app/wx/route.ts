@@ -20,6 +20,7 @@ export async function GET(request: Request) {
   const shasum = createHash('sha1');
   arr.forEach(item => shasum.update(item));
   const hashcode = shasum.digest('hex');
+  console.log(hashcode);
   if(hashcode === signature) {
     return echostr;
   }
