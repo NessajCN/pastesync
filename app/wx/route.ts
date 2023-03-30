@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  console.log(`Request from: ${req.url}.\nParams: ${searchParams}`);
+export async function GET(request: Request) {
+  // export async function GET() {
+  const { searchParams } = new URL(request.url);
+  console.log(`Request from: ${request.url}.\nParams: ${searchParams}`);
   const signature = searchParams.get('signature');
   const timestamp = searchParams.get('timestamp');
   const nonce = searchParams.get('nonce');
@@ -17,5 +18,6 @@ export async function GET(req: Request) {
 
   // return NextResponse.json({ product })
   return NextResponse.json({ signature, timestamp, nonce, echostr })
+  // return NextResponse.json({hello: "world"});
 
 }
